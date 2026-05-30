@@ -10,7 +10,7 @@ struct HTTPResponse {
 };
 
 bool connectWifi(char* ssid, char* password);
-int sync(char* serverIP, int port);
+int sync(char* serverIP, int port, const char* type);
 HTTPResponse sendHTTP(String url);
 
 #endif

@@ -3,9 +3,9 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-int sync(char* serverIP, int port){
+int sync(char* serverIP, int port, const char* type){
 
-  String url = "http://" + String(serverIP) + ":" + String(port) + "/api" + "/sync?time=" + String(millis());
+  String url = "http://" + String(serverIP) + ":" + String(port) + "/api" + "/sync?time=" + String(millis()) + "&type=" + String(type);
   return sendHTTP(url).body.toInt();
 
 }
@@ -17,12 +17,12 @@ HTTPResponse sendHTTP(String url){
   http.begin(url);
 
   res.code = http.POST("");
-    
+
   if (res.code == 200) {
     res.body = http.getString();
     Serial.println("Antwort: " + res.body);
   }
-    
+
   http.end();
   return res;
 }
@@ -33,7 +33,7 @@ bool connectWifi(char* ssid, char* password){
   Serial.print("Connecting to Wifi");
 
   int attempts = 0;
-  int maxAttempts = 20;
+  int maxAttempts = 50;
 
   while (WiFi.status() != WL_CONNECTED && attempts < maxAttempts) {
         delay(500);
