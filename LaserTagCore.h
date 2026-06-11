@@ -9,8 +9,8 @@ struct HTTPResponse {
     String body;
 };
 
-bool connectWifi(char* ssid, char* password);
-int sync(char* serverIP, int port, const char* type);
+bool connectWifi();
+int sync(String serverIP, int port, const String type);
 HTTPResponse sendHTTP(String url);
 
 #endif
