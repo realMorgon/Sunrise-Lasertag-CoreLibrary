@@ -4,6 +4,17 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 
+Preferences preferences;
+
+String readSerialString() {
+    while (!Serial.available()) {
+        delay(10);
+    }
+    String input = Serial.readStringUntil('\n');
+    input.trim();
+    return input;
+}
+
 int sync(String serverIP, int port, const String type){
 
     String url = "http://" + String(serverIP) + ":" + String(port) + "/api" + "/sync?time=" + String(millis()) + "&type=" + String(type);

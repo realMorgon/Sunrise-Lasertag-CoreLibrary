@@ -13,4 +13,6 @@ bool connectWifi();
 int sync(String serverIP, int port, const String type);
 HTTPResponse sendHTTP(String url);
 
+String readSerialString();
+
 #endif
