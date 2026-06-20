@@ -1,10 +1,13 @@
 #include <Arduino.h>
 
 #include "LaserTagCore.h"
+#include "esp32-hal.h"
 
 #include <Preferences.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <cstdint>
+#include <sys/types.h>
 
 Preferences preferences;
 
@@ -17,31 +20,10 @@ String readSerialString() {
     return input;
 }
 
-int sync(String serverIP, int port, const String type){
+LasertagDevice::LasertagDevice(String serverIP, int port){
 
-    String url = "http://" + String(serverIP) + ":" + String(port) + "/api" + "/sync?time=" + String(millis()) + "&type=" + String(type);
-    return sendHTTP(url).body.toInt();
-
-}
-
-HTTPResponse sendHTTP(String url){
-    HTTPClient http;
-    HTTPResponse res;
-
-    http.begin(url);
-
-    res.code = http.POST("");
-
-    if (res.code == 200) {
-        res.body = http.getString();
-        Serial.println("Antwort: " + res.body);
-    }
-
-    http.end();
-    return res;
-}
-
-bool connectWifi(){
+    _serverIP = serverIP;
+    _port = port;
 
     preferences.begin("lasertag-wlan", false);
 
@@ -91,9 +73,54 @@ bool connectWifi(){
         Serial.println("\nMit WLAN verbunden.");
         Serial.print("IP: ");
         Serial.println(WiFi.localIP());
-        return true;
     } else {
         Serial.println("\nZeitüberschreitung beim Verbinden mit WLAN!");
-        return false;
     }
+}
+
+
+void LasertagDevice::sync(const uint8_t type){
+
+    uint8_t message[5];
+
+    uint32_t currentTime = millis();
+    message[0] = (currentTime & 0xFF);
+    message[1] = (currentTime >> 8) & 0xFF;
+    message[2] = (currentTime >> 16) & 0xFF;
+    message[3] = (currentTime >> 24) & 0xFF;
+    message[4] = type;
+
+    sendUDP(0x01, message, 5);
+}
+
+void LasertagDevice::sendUDP(const uint8_t event_type, const uint8_t* message, const int messageSize){
+
+    const int headerSize = 24;
+
+    uint8_t header[headerSize];
+    header[0] = event_type;
+    header[1] = _packetCount & 0xFF;
+    header[2] = _packetCount >> 8 & 0xFF;
+    header[3] = 0x0 & 0xFF;
+
+    header[4] = millis() & 0xFF;
+    header[5] = millis() >> 8 & 0xFF;
+    header[6] = millis() >> 16 & 0xFF;
+    header[7] = millis() >> 24 & 0xFF;
+
+    for(size_t i = 0; i < 16; i++){
+        header[8 + i] = _UUID[i];
+    }
+
+    uint8_t* payload = new uint8_t[headerSize + messageSize];
+    memcpy(payload, header, headerSize);
+    memcpy(payload + headerSize, message, messageSize);
+
+    _udp.beginPacket(_serverIP.c_str(), _port);
+    _udp.write(payload, headerSize + messageSize);
+    _udp.endPacket();
+
+    _packetCount++;
+
+    delete[] payload;
 }
