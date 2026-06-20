@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 #include "LaserTagCore.h"
 
 #include <Preferences.h>
