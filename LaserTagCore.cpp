@@ -20,8 +20,9 @@ String readSerialString() {
     return input;
 }
 
-LasertagDevice::LasertagDevice(String serverIP, int port){
+LasertagDevice::LasertagDevice(uint8_t UUID[16], String serverIP, int port){
 
+    memcpy(_UUID, UUID, 16),
     _serverIP = serverIP;
     _port = port;
 

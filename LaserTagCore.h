@@ -19,12 +19,25 @@ private:
     int _packetCount;
 
 public:
-    LasertagDevice(String serverIP, int port);
+    LasertagDevice(uint8_t UUID[16], String serverIP, int port);
 
     bool connectWifi();
     void sync(const uint8_t type);
 
     void sendUDP(const uint8_t event_type, const uint8_t* message, const int messageSize);
+};
+
+enum LasertagEvent : uint8_t {
+    // Out of game events
+    SYNC = 0x01,
+    // In game events
+    SHOOT = 0x11,
+    GOT_HIT = 0x12
+};
+
+enum LasertagDeviceType : uint8_t {
+    PHASER = 0x31,
+    VEST = 0x32
 };
 
 #endif
