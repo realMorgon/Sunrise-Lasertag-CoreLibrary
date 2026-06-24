@@ -20,9 +20,8 @@ String readSerialString() {
     return input;
 }
 
-LasertagDevice::LasertagDevice(uint8_t UUID[16], String serverIP, int port){
+LasertagDevice::LasertagDevice(String serverIP, int port){
 
-    memcpy(_UUID, UUID, 16),
     _serverIP = serverIP;
     _port = port;
 
@@ -62,6 +61,8 @@ LasertagDevice::LasertagDevice(uint8_t UUID[16], String serverIP, int port){
     WiFi.begin(ssid.c_str(), password.c_str());
     Serial.print("Verbinde mit WLAN");
 
+    WiFi.macAddress(_mac);
+
     int attempts = 0;
     int maxAttempts = 50;
 
@@ -82,21 +83,23 @@ LasertagDevice::LasertagDevice(uint8_t UUID[16], String serverIP, int port){
 
 void LasertagDevice::sync(const uint8_t type){
 
-    uint8_t message[5];
+    uint8_t message[6 + 4 + 1]; // Mac, timestamp, type
+
+    memcpy(message, _mac, 6);
 
     uint32_t currentTime = millis();
-    message[0] = (currentTime & 0xFF);
-    message[1] = (currentTime >> 8) & 0xFF;
-    message[2] = (currentTime >> 16) & 0xFF;
-    message[3] = (currentTime >> 24) & 0xFF;
-    message[4] = type;
+    message[6] = (currentTime & 0xFF);
+    message[7] = (currentTime >> 8) & 0xFF;
+    message[8] = (currentTime >> 16) & 0xFF;
+    message[9] = (currentTime >> 24) & 0xFF;
+    message[10] = type;
 
-    sendUDP(0x01, message, 5);
+    sendUDP(0x01, message, 11);
 }
 
 void LasertagDevice::sendUDP(const uint8_t event_type, const uint8_t* message, const int messageSize){
 
-    const int headerSize = 24;
+    const int headerSize = 1 + 2 + 1 + 4; // event_type, packet_count, reserved, timestamp
 
     uint8_t header[headerSize];
     header[0] = event_type;
@@ -108,10 +111,6 @@ void LasertagDevice::sendUDP(const uint8_t event_type, const uint8_t* message, c
     header[5] = millis() >> 8 & 0xFF;
     header[6] = millis() >> 16 & 0xFF;
     header[7] = millis() >> 24 & 0xFF;
-
-    for(size_t i = 0; i < 16; i++){
-        header[8 + i] = _UUID[i];
-    }
 
     uint8_t* payload = new uint8_t[headerSize + messageSize];
     memcpy(payload, header, headerSize);

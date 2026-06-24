@@ -11,7 +11,7 @@ class LasertagDevice {
 private:
     WiFiUDP _udp;
 
-    uint8_t _UUID[16];
+    byte _mac[6];
 
     String _serverIP;
     int _port;
@@ -19,7 +19,7 @@ private:
     int _packetCount;
 
 public:
-    LasertagDevice(uint8_t UUID[16], String serverIP, int port);
+    LasertagDevice(String serverIP, int port);
 
     bool connectWifi();
     void sync(const uint8_t type);
