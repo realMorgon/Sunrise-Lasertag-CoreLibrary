@@ -83,18 +83,23 @@ LasertagDevice::LasertagDevice(String serverIP, int port){
 
 void LasertagDevice::sync(const uint8_t type){
 
-    uint8_t message[6 + 4 + 1]; // Mac, timestamp, type
+    int message_len = 6 + 1 + 1 + 4; // Mac, type, alignment_space, timestamp
+
+    uint8_t message[message_len];
 
     memcpy(message, _mac, 6);
 
-    uint32_t currentTime = millis();
-    message[6] = (currentTime & 0xFF);
-    message[7] = (currentTime >> 8) & 0xFF;
-    message[8] = (currentTime >> 16) & 0xFF;
-    message[9] = (currentTime >> 24) & 0xFF;
-    message[10] = type;
+    message[6] = type;
+    message[7] = 0x0;
 
-    sendUDP(0x01, message, 11);
+    uint32_t currentTime = millis();
+    message[8] = (currentTime & 0xFF);
+    message[9] = (currentTime >> 8) & 0xFF;
+    message[10] = (currentTime >> 16) & 0xFF;
+    message[11] = (currentTime >> 24) & 0xFF;
+
+
+    sendUDP(0x01, message, message_len);
 }
 
 void LasertagDevice::sendUDP(const uint8_t event_type, const uint8_t* message, const int messageSize){
